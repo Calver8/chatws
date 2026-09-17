@@ -52,7 +52,7 @@ public class ChatCliente {
 
         System.out.println("Enviando mensaje a: " + Constants.MESSAGE);
         session.send(Constants.MESSAGE,
-                new ChatMessage("CHAT", "ana", "Hola a todos"));
+                new ChatMessage("CHAT", "ana", "Hola a todos", null));
         System.out.println("Mensaje enviado");
 
         Thread.sleep(5000);

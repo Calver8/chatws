@@ -1,9 +1,9 @@
 package org.example.chatws.controller;
 
 import org.example.chatws.entity.ChatMessage;
-import org.example.chatws.utility.Constants;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.SendTo;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
 
 /**
@@ -12,6 +12,12 @@ import org.springframework.stereotype.Controller;
  */
 @Controller
 public class ChatController {
+
+    private final SimpMessagingTemplate messagingTemplate;
+
+    public ChatController(SimpMessagingTemplate messagingTemplate) {
+        this.messagingTemplate = messagingTemplate;
+    }
 
     // Ruta para agregar un nuevo usuario al chat
     public static final String CHAT_ADD_USER = "/chat.addUser";
@@ -52,5 +58,21 @@ public class ChatController {
     @SendTo(PATH)
     public ChatMessage agregarUsuario(ChatMessage mensaje) {
         return mensaje;
+    }
+
+    /**
+     * Recibe un mensaje privado y lo envía solo al destinatario específico.
+     * - @MessageMapping: Mapea mensajes enviados a /app/chat.sendPrivate a este método.
+     * - SimpMessagingTemplate: Envía el mensaje dinámicamente a /queue/{destinatario}
+     *   para que solo el usuario especificado reciba el mensaje.
+     * 
+     * Flujo: Cliente -> /app/chat.sendPrivate -> este método -> /queue/{destinatario} -> Solo el destinatario
+     * 
+     * @param mensaje El objeto ChatMessage con el mensaje privado
+     */
+    @MessageMapping("/chat.sendPrivate")
+    public void enviarMensajePrivado(ChatMessage mensaje) {
+        System.out.println("Mensaje privado recibido en servidor: " + mensaje);
+        messagingTemplate.convertAndSend("/queue/" + mensaje.destinatario(), mensaje);
     }
 }

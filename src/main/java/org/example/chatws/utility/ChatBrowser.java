@@ -96,7 +96,7 @@ public final class ChatBrowser {
         System.out.println("Enviando mensaje a: " + Constants.MESSAGE);
         // Envía un mensaje al servidor a través de la sesión STOMP
         session.send(Constants.MESSAGE,
-                new ChatMessage("CHAT", "ana", "Hola a todos"));
+                new ChatMessage("CHAT", "ana", "Hola a todos", null));
         System.out.println("Mensaje enviado");
 
         // Espera 5 segundos para recibir posibles respuestas antes de terminar

@@ -18,7 +18,23 @@
             <button onclick="connect()">Conectar</button>
             <button onclick="disconnect()">Desconectar</button>
         </div>
-        <div id="messages"></div>
+        <div class="message-type">
+            <label>
+                <input type="radio" name="messageType" value="public" checked onchange="toggleMessageType()"> Público
+            </label>
+            <label>
+                <input type="radio" name="messageType" value="private" onchange="toggleMessageType()"> Privado
+            </label>
+        </div>
+        <div id="recipientContainer" class="recipient-container" style="display: none;">
+            <input type="text" id="recipient" placeholder="Destinatario">
+        </div>
+        <div class="tabs">
+            <button class="tab-button active" onclick="switchTab('public')">Público</button>
+            <button class="tab-button" onclick="switchTab('private')">Privado</button>
+        </div>
+        <div id="publicMessages" class="tab-content active"></div>
+        <div id="privateMessages" class="tab-content"></div>
         <div class="message-controls">
             <input type="text" id="message" placeholder="Escribe un mensaje...">
             <button onclick="sendMessage()">Enviar</button>

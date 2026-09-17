@@ -22,8 +22,8 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     /**
      * Configura el broker de mensajes.
-     * - enableSimpleBroker: Habilita un broker en memoria simple para mensajes de tipo topic.
-     *   Los clientes pueden suscribirse a destinos que comienzan con /topic.
+     * - enableSimpleBroker: Habilita un broker en memoria simple para mensajes de tipo topic y queue.
+     *   Los clientes pueden suscribirse a destinos que comienzan con /topic (broadcast) y /queue (privado).
      * - setApplicationDestinationPrefixes: Define el prefijo para destinos de mensajes
      *   enviados desde el cliente al servidor (ej: /app/chat.sendMessage).
      * 
@@ -31,7 +31,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
      */
     @Override
     public void configureMessageBroker(MessageBrokerRegistry config) {
-        config.enableSimpleBroker(TOPIC);
+        config.enableSimpleBroker(TOPIC, "/queue");
         config.setApplicationDestinationPrefixes(APP);
     }
 
