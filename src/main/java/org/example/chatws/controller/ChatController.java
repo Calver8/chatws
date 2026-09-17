@@ -73,6 +73,7 @@ public class ChatController {
     @MessageMapping("/chat.sendPrivate")
     public void enviarMensajePrivado(ChatMessage mensaje) {
         System.out.println("Mensaje privado recibido en servidor: " + mensaje);
-        messagingTemplate.convertAndSend("/queue/" + mensaje.destinatario(), mensaje);
+        messagingTemplate.convertAndSend("/queue/" + mensaje.getDestinatario(), mensaje);
+        messagingTemplate.convertAndSend("/queue/" + mensaje.getUsuario(), mensaje);
     }
 }

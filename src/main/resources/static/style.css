@@ -98,6 +98,100 @@ h2 {
 .message-controls input[type="text"] {
     flex: 1;
 }
+.video-controls {
+    display: flex;
+    gap: 8px;
+    margin-top: 10px;
+}
+.call-controls {
+    display: flex;
+    gap: 8px;
+    margin-top: 10px;
+}
+.call-controls input[type="text"] {
+    flex: 1;
+}
+.video-container {
+    margin-top: 10px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    overflow: hidden;
+    background-color: #000;
+    display: flex;
+    gap: 10px;
+    padding: 10px;
+}
+.video-wrapper {
+    flex: 1;
+    position: relative;
+    border-radius: 4px;
+    overflow: hidden;
+    background-color: #333;
+}
+.video-wrapper video {
+    width: 100%;
+    height: auto;
+    display: block;
+    object-fit: cover;
+}
+.video-label {
+    position: absolute;
+    bottom: 8px;
+    left: 8px;
+    background-color: rgba(0, 0, 0, 0.7);
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 500;
+}
+.incoming-call-notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background-color: #007bff;
+    color: white;
+    padding: 15px 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    z-index: 1000;
+    animation: slideIn 0.3s ease-out;
+}
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+.incoming-call-notification button {
+    padding: 8px 16px;
+    font-size: 14px;
+    margin-left: 5px;
+}
+.incoming-call-notification button:first-of-type {
+    background-color: #28a745;
+}
+.incoming-call-notification button:first-of-type:hover {
+    background-color: #218838;
+}
+.incoming-call-notification button:last-of-type {
+    background-color: #dc3545;
+}
+.incoming-call-notification button:last-of-type:hover {
+    background-color: #c82333;
+}
+button:disabled {
+    background-color: #6c757d;
+    cursor: not-allowed;
+    opacity: 0.6;
+}
 input[type="text"] {
     padding: 12px;
     border: 1px solid #ccc;

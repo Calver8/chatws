@@ -23,6 +23,8 @@ ChatWS es una aplicación de chat en tiempo real que permite a múltiples usuari
 - STOMP como protocolo de mensajería
 - SockJS para compatibilidad con navegadores antiguos
 - Jackson para serialización JSON
+- Soporte para mensajes privados (queues)
+- Soporte para señalización WebRTC (video/audio)
 
 ---
 
@@ -39,20 +41,25 @@ ChatWS es una aplicación de chat en tiempo real que permite a múltiples usuari
        │ 1. Conexión WebSocket                          │
        │ 2. Suscripción a /topic/public                 │
        │ 3. Envío a /app/chat.sendMessage               │
+       │ 4. Envío a /app/chat.sendPrivate (opcional)     │
        │                                                 │
        │                                                 │
-       │ 4. Recepción de mensajes                       │
+       │ 5. Recepción de mensajes                       │
        │    (broadcast desde /topic/public)             │
+       │ 6. Recepción de mensajes privados              │
+       │    (desde /queue/{usuario})                    │
 ```
 
 ### Flujo Completo de un Mensaje
 
 1. **Conexión:** El cliente web establece una conexión WebSocket con el servidor
-2. **Suscripción:** El cliente se suscribe al canal `/topic/public` para recibir mensajes
-3. **Envío:** El cliente envía un mensaje a `/app/chat.sendMessage`
-4. **Procesamiento:** El `ChatController` recibe el mensaje
-5. **Broadcast:** El mensaje se reenvía a todos los suscriptores de `/topic/public`
-6. **Recepción:** Todos los clientes conectados reciben el mensaje simultáneamente
+2. **Suscripción:** El cliente se suscribe al canal `/topic/public` para mensajes públicos y `/queue/{usuario}` para mensajes privados
+3. **Envío público:** El cliente envía un mensaje a `/app/chat.sendMessage` para broadcast
+4. **Envío privado:** El cliente envía un mensaje a `/app/chat.sendPrivate` para comunicación directa
+5. **Procesamiento:** El `ChatController` recibe y procesa los mensajes
+6. **Broadcast:** Los mensajes públicos se reenvían a todos los suscriptores de `/topic/public`
+7. **Envío privado:** Los mensajes privados se envían solo a `/queue/{destinatario}` y `/queue/{usuario}`
+8. **Recepción:** Los clientes reciben mensajes según sus suscripciones
 
 ---
 
@@ -70,7 +77,8 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer
 
 **Responsabilidades:**
 - Habilita el broker de mensajes en memoria
-- Configura el prefijo `/topic` para suscripciones
+- Configura el prefijo `/topic` para suscripciones públicas
+- Configura el prefijo `/queue` para mensajes privados
 - Configura el prefijo `/app` para mensajes del cliente
 - Registra el endpoint `/chat` para conexiones WebSocket
 - Habilita SockJS como fallback
@@ -90,8 +98,10 @@ public class ChatController {
 
 **Responsabilidades:**
 - Recibe mensajes enviados por los clientes
-- Reenvía los mensajes a todos los suscriptores
+- Reenvía los mensajes públicos a todos los suscriptores
+- Envía mensajes privados a destinatarios específicos
 - Gestiona la entrada de nuevos usuarios
+- Soporta señalización WebRTC para video/audio
 
 ### 3. Entidad de Mensaje (`ChatMessage.java`)
 
@@ -105,6 +115,8 @@ public record ChatMessage(String tipo, String usuario, String contenido)
 - `tipo`: Tipo de mensaje (CHAT, JOIN, LEAVE)
 - `usuario`: Nombre del usuario que envía el mensaje
 - `contenido`: Texto del mensaje
+- `destinatario`: Usuario destinatario para mensajes privados (opcional)
+- `webRTCSignal`: Datos de señalización WebRTC para video/audio (opcional)
 
 ### 4. Cliente Web (`index.html` + `script.js`)
 
@@ -113,8 +125,10 @@ Interfaz de usuario para el chat:
 **Funciones principales:**
 - `connect()`: Establece conexión WebSocket con SockJS y STOMP
 - `disconnect()`: Cierra la conexión
-- `sendMessage()`: Envía mensajes al servidor
+- `sendMessage()`: Envía mensajes públicos al servidor
+- `sendPrivateMessage()`: Envía mensajes privados a un usuario específico
 - `showMessage()`: Muestra mensajes recibidos en la UI
+- `handleWebRTCSignal()`: Procesa señales WebRTC para video/audio
 
 ### 5. Cliente de Prueba (`ChatBrowser.java`)
 
@@ -171,6 +185,34 @@ public ChatMessage enviarMensaje(ChatMessage mensaje) {
 
 Cada cliente suscrito a `/topic/public` recibe el mensaje automáticamente a través del callback de suscripción.
 
+### Paso 4: Mensajes Privados (Opcional)
+
+**Cliente (JavaScript):**
+```javascript
+stompClient.send("/app/chat.sendPrivate", {}, JSON.stringify({
+    tipo: 'CHAT',
+    usuario: username,
+    contenido: content,
+    destinatario: 'otroUsuario'
+}));
+```
+
+**Servidor (ChatController):**
+```java
+@MessageMapping("/chat.sendPrivate")
+public void enviarMensajePrivado(ChatMessage mensaje) {
+    messagingTemplate.convertAndSend("/queue/" + mensaje.getDestinatario(), mensaje);
+    messagingTemplate.convertAndSend("/queue/" + mensaje.getUsuario(), mensaje);
+}
+```
+
+**Suscripción a mensajes privados:**
+```javascript
+stompClient.subscribe('/queue/' + username, function (message) {
+    showMessage(JSON.parse(message.body));
+});
+```
+
 ---
 
 ## 📚 Glosario de Conceptos
@@ -216,11 +258,12 @@ content-type:application/json
 
 **Tipos de destinos que maneja:**
 - **Topics (`/topic/*`):** Mensajes enviados a múltiples suscriptores (broadcast)
-- **Queues (`/queue/*`):** Mensajes enviados a un solo consumidor (no usado en este proyecto)
+- **Queues (`/queue/*`):** Mensajes enviados a un solo consumidor (mensajes privados)
 
 **Flujo a través del broker:**
 ```
 Cliente A → /app/chat.sendMessage → Broker → /topic/public → Cliente B, C, D
+Cliente A → /app/chat.sendPrivate → Broker → /queue/UsuarioB → Solo UsuarioB
 ```
 
 ---
@@ -261,8 +304,10 @@ registry.addEndpoint("/chat").withSockJS();
 
 **Jerarquía de endpoints en el proyecto:**
 - `/chat` - Endpoint de conexión WebSocket
-- `/app/chat.sendMessage` - Endpoint para enviar mensajes (desde cliente)
-- `/topic/public` - Topic para recibir mensajes (hacia clientes)
+- `/app/chat.sendMessage` - Endpoint para enviar mensajes públicos (desde cliente)
+- `/app/chat.sendPrivate` - Endpoint para enviar mensajes privados (desde cliente)
+- `/topic/public` - Topic para recibir mensajes públicos (hacia clientes)
+- `/queue/{usuario}` - Queue para recibir mensajes privados (hacia cliente específico)
 
 ---
 
@@ -305,12 +350,35 @@ Cliente → @MessageMapping → Método del Controller → @SendTo → Topic →
 
 **En este proyecto:** Se usa para serializar los objetos `ChatMessage` al enviarlos por la red y deserializarlos al recibirlos.
 
-**Ejemplo de mensaje JSON:**
+**Ejemplo de mensaje JSON (público):**
 ```json
 {
   "tipo": "CHAT",
   "usuario": "Ana",
   "contenido": "Hola a todos"
+}
+```
+
+**Ejemplo de mensaje JSON (privado):**
+```json
+{
+  "tipo": "CHAT",
+  "usuario": "Ana",
+  "contenido": "Hola Juan",
+  "destinatario": "Juan"
+}
+```
+
+**Ejemplo de mensaje JSON (WebRTC):**
+```json
+{
+  "tipo": "WEBRTC_SIGNAL",
+  "usuario": "Ana",
+  "destinatario": "Juan",
+  "webRTCSignal": {
+    "type": "offer",
+    "sdp": "..."
+  }
 }
 ```
 
@@ -402,6 +470,19 @@ El chat implementa el patrón publish-subscribe donde:
 - **Subscriber:** Los clientes que se suscriben al topic
 - **Topic:** El canal `/topic/public` que distribuye los mensajes
 
+### Mensajes Privados (Point-to-Point)
+Para comunicación directa entre usuarios:
+- Los mensajes se envían a `/queue/{usuario}`
+- Solo el usuario específico recibe el mensaje
+- Útil para conversaciones privadas
+
+### WebRTC (Video/Audio)
+El sistema soporta señalización WebRTC para:
+- Videollamadas peer-to-peer
+- Llamadas de audio
+- Compartición de pantalla
+- El campo `webRTCSignal` transporta ofertas, respuestas y candidatos ICE
+
 ### Asincronía
 La comunicación es completamente asíncrona:
 - Los clientes no bloquean esperando respuestas
@@ -443,10 +524,17 @@ SockJS detecta automáticamente la capacidad del navegador y usa transportes alt
 **¿Cómo se manejan múltiples usuarios?**
 Cada conexión WebSocket es independiente. El broker mantiene registro de todas las suscripciones y distribuye los mensajes a los suscriptores correspondientes automáticamente.
 
-**¿Por qué usar `/app` y `/topic`?**
+**¿Por qué usar `/app`, `/topic` y `/queue`?**
 - `/app`: Prefijo para mensajes que el cliente envía al servidor (para procesamiento)
-- `/topic`: Prefijo para mensajes que el servidor envía a los clientes (para broadcast)
-Esta separación clarifica la dirección del flujo de mensajes.
+- `/topic`: Prefijo para mensajes que el servidor envía a múltiples clientes (broadcast)
+- `/queue`: Prefijo para mensajes que el servidor envía a un cliente específico (privado)
+Esta separación clarifica la dirección y el alcance del flujo de mensajes.
+
+**¿Cómo funcionan los mensajes privados?**
+Los mensajes privados usan el prefijo `/queue` que implementa el patrón point-to-point. Cuando un cliente envía un mensaje privado, el servidor lo envía solo a la cola del destinatario específico (`/queue/{destinatario}`), asegurando que solo ese usuario reciba el mensaje.
+
+**¿Qué es WebRTC y cómo se usa aquí?**
+WebRTC (Web Real-Time Communication) es una tecnología que permite comunicación de audio/video directamente entre navegadores sin servidor intermediario. En este proyecto, el campo `webRTCSignal` en `ChatMessage` se usa para transportar la señalización (ofertas, respuestas, candidatos ICE) necesaria para establecer conexiones P2P.
 
 ---
 

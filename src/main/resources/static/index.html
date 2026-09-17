@@ -39,6 +39,30 @@
             <input type="text" id="message" placeholder="Escribe un mensaje...">
             <button onclick="sendMessage()">Enviar</button>
         </div>
+        <div class="video-controls">
+            <button onclick="startVideo()" id="startVideoBtn">Iniciar Cámara</button>
+            <button onclick="stopVideo()" id="stopVideoBtn" disabled>Detener Cámara</button>
+        </div>
+        <div class="call-controls">
+            <input type="text" id="callRecipient" placeholder="Usuario a llamar">
+            <button onclick="startCall()" id="callBtn" disabled>Llamar</button>
+            <button onclick="endCall()" id="endCallBtn" disabled>Colgar</button>
+        </div>
+        <div class="video-container" id="videoContainer" style="display: none;">
+            <div class="video-wrapper">
+                <video id="localVideo" autoplay playsinline muted></video>
+                <span class="video-label">Tú</span>
+            </div>
+            <div class="video-wrapper">
+                <video id="remoteVideo" autoplay playsinline></video>
+                <span class="video-label">Remoto</span>
+            </div>
+        </div>
+        <div class="incoming-call-notification" id="incomingCallNotification" style="display: none;">
+            <span id="callerName">Usuario</span> te está llamando
+            <button onclick="acceptCall()">Aceptar</button>
+            <button onclick="rejectCall()">Rechazar</button>
+        </div>
     </div>
 
     <script src="script.js"></script>
