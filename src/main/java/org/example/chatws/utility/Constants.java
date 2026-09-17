@@ -22,7 +22,7 @@ public final class Constants {
     /** Endpoint para enviar mensajes privados entre usuarios */
     public static final String PRIVATE_MESSAGE = "/app/chat.sendPrivate";
     /** URL base del servidor WebSocket */
-    public static final String BASE_URL = "ws://localhost:8080";
+    public static final String BASE_URL = "wss://localhost:8443";
 
     /** Constructor privado para evitar instanciación (clase utilitaria) */
     private Constants() {

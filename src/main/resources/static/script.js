@@ -3,7 +3,7 @@ let stompClient = null;
 function connect() {
     const serverIp = document.getElementById('serverIp').value;
     const username = document.getElementById('username').value;
-    const socket = new SockJS('http://' + serverIp + ':8080/chat');
+    const socket = new SockJS('https://' + serverIp + ':8443/chat');
     stompClient = Stomp.over(socket);
     
     stompClient.connect({}, function (frame) {

@@ -411,11 +411,36 @@ Cliente → @MessageMapping → Método del Controller → @SendTo → Topic →
    ```bash
    ./mvnw spring-boot:run
    ```
+   El servidor se ejecutará en HTTPS en el puerto 8443.
 
 4. **Abrir el cliente web:**
-   - Navegar a `http://localhost:8080/index.html`
+   - Navegar a `https://localhost:8443/index.html`
+   - Aceptar la advertencia de certificado (el certificado es self-signed para desarrollo)
    - Ingresar nombre de usuario
    - Hacer clic en "Conectar"
+
+### Acceso desde Android (WiFi)
+
+Para acceder a la cámara desde un dispositivo Android conectado vía WiFi:
+
+1. **Obtener la IP del servidor:**
+   - En macOS: `ifconfig` (buscar inet en en0)
+   - En Linux: `ip addr show`
+   - En Windows: `ipconfig`
+
+2. **Configurar el firewall:**
+   - Asegúrate de que el puerto 8443 esté abierto en el firewall
+
+3. **Acceder desde Android:**
+   - Navegar a `https://[IP_DEL_SERVIDOR]:8443/index.html`
+   - Aceptar la advertencia de certificado (Chrome mostrará "Su conexión no es privada")
+   - **Importante:** Los navegadores Android requieren HTTPS para acceder a la cámara y el microfono
+
+4. **Si el certificado no es aceptado:**
+   - Abre Chrome en Android
+   - Navega a `chrome://flags/#unsafely-treat-insecure-origin-as-secure`
+   - Habilita la opción y agrega `https://[IP_DEL_SERVIDOR]:8443`
+   - Reinicia Chrome
 
 5. **Probar el cliente Java (opcional):**
    ```bash
